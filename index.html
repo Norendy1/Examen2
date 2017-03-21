@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.5.min.css">
+	<script src="phonegap.js"></script>
+	<script type="text/javascript" src="js/jquery.js"></script>	
+	<script type="text/javascript" src="js/jquery.mobile-1.4.5.min.js"></script>
+<script type="text/javascript">
+ var opciones;
+ opciones={maximumAge:500000,enableHighAccuracy:true,timeout:5000};
+
+document.addEventListener("deviceready", onDeviceReady, false);
+function onDeviceReady(){
+		/*******Evento para registrar servicios*********/
+		$("#btnGuardar").tap(function (){	
+			var nom=$("#Nombre").val();
+			var dir=$("#Direccion").val();
+			var rfc=$("#RFC").val();
+			var tel=$("#Telefono").val();
+			var clasif=$("#clasificacion").val();
+			var foto="img/fotos/foto1.jpg";
+			var lat=$("#latitud").val();
+			var longit=$("#longitud").val();
+			alert("Funciona guardar");								
+			$.ajax({
+				type:"POST",
+				url:"http://norendy.esy.es/Guardar.php",
+				data:"Nom="+nom+"&Dir="+dir+"&Rfc="+rfc+"&Tel="+tel+"&Clasif="+clasif+"&Foto="+foto+"&Lat="+lat+"&Long="+longit,
+				success:function (datos) {
+					alert("Datos guardados correctamente: "+datos);
+				}
+			});
+		});
+
+		/**********Evento para consulta*************/
+		$("#btnConsServ").tap(function (){
+			$.ajax({
+				type:"POST",
+				url:"http://norendy.esy.es/Consulta.php",
+				data:"",
+				success:function (datos) {
+					var reg=$.parseJSON(datos);
+					var fila=$("#datosTodos");
+					fila.html("");
+					 for(var i in reg){
+					 	fila.append("<tr><td>"+reg[i].id_servicio+"</td><td>"+reg[i].Nombre_servicio+"</td><td>"+reg[i].Direcccion+"</td><td>"+reg[i].RFC+"</td><td>"+reg[i].Telefono+"</td><td>"+reg[i].Clasificacion+"</td><td>"+reg[i].Foto+"</td><td>"+reg[i].Latitud+"</td><td>"+reg[i].Longitud+"</td></tr>");
+					 }
+					$("#tb1").table("refresh");
+				}
+			});
+		});
+
+		$("#btnEliminarID").tap(function (){
+		var id=$("#txtIDServE").val();
+		$.ajax({
+			type:"POST",
+			url:"http://norendy.esy.es//Eliminar.php",
+			data:"ID="+id,
+			success: function (datos){
+				alert(datos);
+			}
+		});
+
+	});	
+
+		/**********Evento para consulta ID*************/
+		$("#btnConsServID").tap(function (){
+			var Id=$("#txtIDBusqueda").val();
+			alert("Funciona consulta");
+			$.ajax({
+				type:"POST",
+				url:"http://norendy.esy.es/ConsultaID.php",
+				data:"ID="+Id,
+				success:function (datos) {
+					var reg=$.parseJSON(datos);
+					var fila=$("#datosID");
+					 for(var i in reg){
+					 	fila.html("<tr><td>"+reg[i].id_servicio+"</td><td>"+reg[i].Nombre_servicio+"</td><td>"+reg[i].Direccion+"</td><td>"+reg[i].RFC+"</td><td>"+reg[i].Telefono+"</td><td>"+reg[i].Clasificacion+"</td><td>"+reg[i].Foto+"</td><td>"+reg[i].Latitud+"</td><td>"+reg[i].Longitud+"</td></tr>");
+					 }
+					$("#tb2").table("refresh");
+				}
+			});
+		});
+
+		$("#btnConsutIDACT").tap(function (){
+		var id=$("#txtIDServACT").val();
+		$.ajax({
+			type:"POST",
+			url:"http://movilesisc.esy.es/ConsultaID.php",
+			data:"ID="+id,
+			success: function(datos){
+				alert(datos);
+				var reg=$.parseJSON(datos);
+				var controles=$("#controlesForm");
+				controles.css("display","block");
+				$("#IdSerACT").val(reg[0].Id_Servicio);
+				$("#NombreACT").val(reg[0].Nombre_servicio);
+				$("#DireccionACT").val(reg[0].Direccion);
+				$("#RFCACT").val(reg[0].RFC);
+				$("#TelefonoACT").val(reg[0].Telefono);
+				$("#clasificacionACT").val(reg[0].Clasificacion);
+				$("#latitudACT").val(reg[0].Latitud);
+				$("#longitudACT").val(reg[0].Longitud);
+			}
+		});
+
+	});
+	/***********Obtener Coordenadas***********************/
+	$("#btnCords").tap(function(){//Obtener coordenadas para el registro de servicios			
+  		obtenerUbicacion();
+	});
+	$("#btnFoto").tap(function (){//Capturar fotografia
+        navigator.device.capture.captureImage(function(mediaFiles){
+		    path = mediaFiles[0].fullPath;
+		    $('#regFoto').append('<img id="imagen" src="'+path+'" width="100%" />').attr('rel',path);
+	      },function(error){
+		        navigator.notification.alert('Error code: ' + error.code, null, 'Capture Error');
+	      },{limit:1});
+	    /*navigator.camera.getPicture(onSuccess, onFail, { quality: 50,
+    	destinationType: Camera.DestinationType.FILE_URI });
+
+		function onSuccess(imageURI) {
+   			$('#regFoto').append('<img id="imagen" src="'+imageURI+'" width="100%" />').attr('rel',imageURI);
+		}
+
+		function onFail(message) {
+    		alert('Fallo al obtener la foto: ' + message);
+		}*/
+  	});
+}
+	function obtenerUbicacion(){//Funcion que obtiene la Ubicación del dispositivo móvil
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(exito, falla, opciones);
+
+	  function exito(posic){
+	      //var corUbic=new google.maps.LatLng(posic.coords.latitude, posic.coords.longitude);
+	      $("#latitud").val(posic.coords.latitude);
+	      $("#longitud").val(posic.coords.longitude);	      
+	     }
+
+	      function falla(error){
+	         alert("Error en el servicio Geolocalizador: "+error.code+" detalle: "+error.response);
+	      }
+	  }else{
+	      alert("Su dispositivo no soporta la geolocalización o no esta habilitada esta funcionalidad");
+	  }
+    }
+</script>
+	<style type="text/css">
+		p{
+			text-align: center;
+		}
+		#controlesForm{
+			display:none;
+		}
+	</style>
+</head>
+<body>
+	<div data-role="page" id="Principal">
+		<div data-role="header">
+			<p>Menú principal</p>
+		</div>	
+		<div data-role="content">
+			<ul data-role="listview">
+				<li><a href="#Registrar">Registrar servicios</a></li>	
+				<li><a href="#Consultar">Consultar servicios</a></li>
+				<li><a href="#ConsultarID">Consultar servicios por ID</a></li>
+				<li><a href="#ActualizarID">Actualizar servicios</a></li>
+				<li><a href="#EliminarID">Eliminar servicios</a></li>
+			</ul>	
+		</div>
+		<div data-role="footer" data-position="fixed">
+			<p>pie de aplicación</p>
+		</div>
+	</div>
+	<div data-role="page" id="Registrar">
+		<div data-role="header">
+			<p>Registrar servicios</p>
+		</div>	
+		<div data-role="content">
+			<input type="text" id="Nombre" placeholder="Escribe el nombres del servicio">
+			<input type="text" id="Direccion" placeholder="Escribe la dirección">
+			<input type="text" id="RFC" placeholder="Escribe el RFC">
+			<input type="text" id="Telefono" placeholder="Escribe el número de teléfono">
+			<select id="clasificacion">
+				<option value="Restaurante">Restaurante</option>
+				<option value="Zapateria">Zapatería</option>
+				<option value="Farmacia">Farmacia</option>
+			</select>
+			<input type="button" id="btnFoto" value="Tomar foto">
+			<div id="regFoto"></div>
+			<input type="button" id="btnCords" value="Obtener coordenadas">
+			<input type="text" id="latitud" placeholder="Latitud">
+			<input type="text" id="longitud" placeholder="Longitud">
+			<input type="button" id="btnGuardar" value="Guardar servicio">
+		</div>
+		<div data-role="footer" data-position="fixed">
+			<p><a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a></p>
+		</div>
+	</div>
+	<div data-role="page" id="Consultar">
+		<div data-role="header">
+			<p>Consultar servicios</p>
+		</div>	
+		<div data-role="content">
+			<input type="button" id="btnConsServ" value="Consultar Todos los Servicios">
+			<div>
+			<table data-role="table" data-mode="columntoggle" class="ui-responsive" id="tb1">
+				<thead id="datosTodos">
+					<tr>
+						<th data-priority="1">Id</th>
+						<th data-priority="2">Nombre</th>
+						<th data-priority="3">Direción</th>
+						<th data-priority="4">RFC</th>
+						<th data-priority="5">Tel:</th>
+						<th data-priority="6">Clasif</th>
+						<th data-priority="7">Foto</th>
+						<th data-priority="8">Lat</th>
+						<th data-priority="9">Long</th>
+					</tr>
+				</thead>				
+				<tbody id="datosTodos">
+				</tbody>
+			</table>
+			</div>
+		</div>
+		<div data-role="footer" data-position="fixed">
+			<p><a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a></p>
+		</div>
+	</div>
+	<div data-role="page" id="ConsultarID">
+		<div data-role="header">
+			<p>Consultar por ID de servicios</p>
+		</div>	
+		<div data-role="content">
+			<input type="text" id="txtIDBusqueda" placeholder="Escribe el Id del servicio a consultar">
+			<input type="button" id="btnConsServID" value="Consultar Servicio">
+			<div>
+			<table data-role="table" data-mode="columntoggle" class="ui-responsive" id="tb2">
+				<thead>
+					<tr>
+						<th data-priority="1">Id</th>
+						<th data-priority="2">Nombre</th>
+						<th data-priority="3">Direción</th>
+						<th data-priority="4">RFC</th>
+						<th data-priority="5">Tel:</th>
+						<th data-priority="6">Clasif</th>
+						<th data-priority="7">Foto</th>
+						<th data-priority="8">Lat</th>
+						<th data-priority="9">Long</th>
+					</tr>
+				</thead>				
+				<tbody id="datosID">
+				</tbody>
+			</table>
+			</div>
+		</div>
+		<div data-role="footer" data-position="fixed">
+			<p><a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a></p>
+		</div>
+	</div>
+	<div data-role="page" id="ActualizarID">
+		<div data-role="header">
+			<p>Actualizar servicio por ID</p>
+		</div>	
+		<div data-role="content">
+			<input type="text" id="txtIDServACT" placeholder="Escribe el numero de ID del servicio">
+			<input type="button" id="btnConsutIDACT" value="Consultar Servicio">
+			<div id="controlesForm">
+				<input type="text" id="IdSerACT" >
+				<input type="text" id="NombreACT" >
+				<input type="text" id="DireccionACT" >
+				<input type="text" id="RFCACT" >
+				<input type="text" id="TelefonoACT" >
+			<select id="clasificacionACT">
+				<option value="Restaurante">Restaurante</option>
+				<option value="Zapateria">Zapatería</option>
+				<option value="Farmacia">Farmacia</option>
+			</select>
+			<input type="button" id="btnFotoACT" value="Tomar foto">
+			<div id="regFoto"></div>
+			<input type="button" id="btnCordsACT" value="Obtener coordenadas">
+			<input type="text" id="latitudACT" >
+			<input type="text" id="longitudACT" >
+			</div>
+			<input type="button" id="btnActualizar" value="Actualizar servicio">
+		</div>
+		<div data-role="footer">
+			<p><a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a></p>
+		</div>
+	</div>
+	<div data-role="page" id="EliminarID">
+		<div data-role="header">
+			<p>Eliminar servicios por ID</p>
+		</div>	
+		<div data-role="content">
+			<input type="text" id="txtIDServE" placeholder="Escribe el numero de ID del servicio">
+			<input type="button" id="btnEliminarID" value="Eliminar Servicio">
+		</div>
+		<div data-role="footer">
+			<p><a href="#Principal" class="ui-btn ui-icon-home ui-btn-icon-left">Regresar</a></p>
+		</div>
+	</div>
+</body>
+</html>
